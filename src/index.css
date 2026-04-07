@@ -1,0 +1,20 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #060C14;
+  --bg2: #0C1624;
+  --bg3: #111E30;
+  --accent: #3B8BEB;
+  --accent2: #1DCFB0;
+  --text: #F0F4FF;
+  --muted: #7A8FAD;
+  --border: rgba(255,255,255,0.07);
+}
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
