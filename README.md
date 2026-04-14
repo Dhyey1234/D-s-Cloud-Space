@@ -79,19 +79,28 @@ cd backend
 npm install
 ```
 
-3. Create a `.env` file based on `.env.example`:
+3. Create a `.env` file:
 ```bash
 cp .env.example .env
 ```
 
-4. Update the `.env` file with your MongoDB connection string and JWT secret:
+4. Update the `.env` file with your MongoDB connection string, JWT secret, and email settings:
 ```env
-PORT=5000
+PORT=8000
 NODE_ENV=development
 MONGODB_URI=mongodb://localhost:27017/ds-cloudspace
 JWT_SECRET=your_secure_jwt_secret_key
 JWT_EXPIRE=7d
+EMAIL_HOST=smtp.example.com
+EMAIL_PORT=587
+EMAIL_SECURE=false
+EMAIL_USER=your-smtp-user
+EMAIL_PASS=your-smtp-password
+EMAIL_FROM="D's Cloud Space" <no-reply@example.com>
+CLIENT_URL=http://localhost:3000
 ```
+
+If SMTP is not configured, password reset emails will be logged to the server console for development.
 
 ## Running the Application
 
@@ -121,18 +130,75 @@ The frontend will start on `http://localhost:3000`
 - `/` - Landing page
 - `/signup` - Sign up page
 - `/login` - Login page
+- `/forgot-password` - Forgot password page
+- `/reset-password/:resetToken` - Reset password page
 - `/home` - Home page (protected route after login)
+- `/organizations` - Organizations management page (protected)
+- `/org/:orgId` - Organization settings page (protected)
+- `/accept-invite/:token` - Accept organization invite
 
 ### Backend API Routes
 
 #### Authentication (`/api/auth`)
 - `POST /signup` - Create a new user account
 - `POST /login` - Login with email and password
+- `POST /forgot-password` - Send password reset instructions by email
+- `PUT /reset-password/:resetToken` - Reset password using the emailed reset token
+
+#### Organizations (`/api/orgs`) - Multi-Organization Management
+- `GET /` - Get all organizations for current user (protected)
+- `POST /` - Create a new organization (protected)
+- `GET /:orgId` - Get organization details (protected)
+- `PUT /:orgId` - Update organization profile: name, description, logo (protected, admin+)
+- `POST /:orgId/switch` - Switch to an organization (protected)
+- `GET /:orgId/storage` - Get organization storage usage (protected)
+- `GET /:orgId/policies` - Get organization policies (protected)
+- `PUT /:orgId/policies` - Update organization policies (protected, admin+)
+- `GET /:orgId/members` - Get organization members (protected)
+- `POST /:orgId/invite` - Invite member via email (protected, admin+)
+- `POST /invite/:token/accept` - Accept organization invite (protected)
+- `PUT /:orgId/members/:memberId/role` - Update member role (protected, admin+)
+- `POST /:orgId/members/:memberId/suspend` - Suspend member (protected, admin+)
+- `DELETE /:orgId/members/:memberId` - Remove member (protected, admin+)
+- `POST /:orgId/transfer-ownership` - Transfer organization ownership (protected, owner)
 
 #### Files (`/api/files`)
 - `GET /` - Get all user's files (protected)
 - `POST /upload` - Upload a new file (protected)
 - `DELETE /:id` - Delete a file (protected)
+
+## Organization Management Features
+
+### Architecture
+- **Multi-Organization Support**: Users can create and belong to multiple organizations
+- **Role-Based Access Control**: Owner, Admin, Member, Viewer roles with granular permissions
+- **Isolated Environments**: Each organization has separate file storage, members, and policies
+- **Email-Based Invitations**: 7-day expiration tokens with automatic cleanup
+
+### Organization Roles & Permissions
+| Feature | Owner | Admin | Member | Viewer |
+|---------|-------|-------|--------|--------|
+| View files | ✅ | ✅ | ✅ | ✅ |
+| Upload files | ✅ | ✅ | ✅ | ❌ |
+| Delete files | ✅ | ✅ | ✅ | ❌ |
+| Edit org settings | ✅ | ✅ | ❌ | ❌ |
+| Manage members | ✅ | ✅ | ❌ | ❌ |
+| Suspend members | ✅ | ✅ | ❌ | ❌ |
+| Transfer ownership | ✅ | ❌ | ❌ | ❌ |
+
+### Member Management
+- Invite members via email with role assignment
+- Accept/reject invitations via email link
+- Update member roles
+- Suspend members (retain data, deny access)
+- Remove members permanently
+
+### Organization Policies
+- Two-factor authentication requirements
+- Public file sharing controls
+- Download permissions
+- Max file size enforcement
+- Storage quota management
 
 ## Building for Production
 

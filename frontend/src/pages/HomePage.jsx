@@ -27,14 +27,13 @@ export default function HomePage() {
     try {
       const response = await fetch('/api/files', {
         headers: {
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
       });
 
       if (response.ok) {
         const data = await response.json();
         setFiles(data.files || []);
-        // Calculate total storage used
         const totalSize = data.files.reduce((acc, file) => acc + parseFloat(file.size), 0);
         setStorageUsed(totalSize);
       }
@@ -63,7 +62,7 @@ export default function HomePage() {
       const response = await fetch('/api/files/upload', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
         body: formData,
       });
@@ -71,7 +70,7 @@ export default function HomePage() {
       if (response.ok) {
         const data = await response.json();
         setFiles([...files, data.file]);
-        setStorageUsed(prev => prev + parseFloat(data.file.size));
+        setStorageUsed((prev) => prev + parseFloat(data.file.size));
       }
     } catch (err) {
       console.error('Upload failed:', err);
@@ -84,15 +83,15 @@ export default function HomePage() {
       const response = await fetch(`/api/files/${fileId}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
       });
 
       if (response.ok) {
-        const deletedFile = files.find(f => f.id === fileId);
-        setFiles(files.filter(f => f.id !== fileId));
+        const deletedFile = files.find((f) => f.id === fileId);
+        setFiles(files.filter((f) => f.id !== fileId));
         if (deletedFile) {
-          setStorageUsed(prev => prev - parseFloat(deletedFile.size));
+          setStorageUsed((prev) => prev - parseFloat(deletedFile.size));
         }
       }
     } catch (err) {
@@ -123,6 +122,13 @@ export default function HomePage() {
         </div>
         <div className="nav-right">
           <span className="user-name">Welcome, {user?.name}!</span>
+          <button 
+            className="btn btn-secondary" 
+            onClick={() => navigate('/organizations')}
+            title="Manage Organizations"
+          >
+            Organizations
+          </button>
           <button className="btn btn-secondary" onClick={handleLogout}>
             Logout
           </button>

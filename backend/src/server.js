@@ -4,6 +4,10 @@ import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import authRoutes from './routes/authRoutes.js';
 import fileRoutes from './routes/files.js';
+import organizationRoutes from './routes/organizationV2.js';
+import Organization from './models/Organization.js';
+import OrganizationMember from './models/OrganizationMember.js';
+import User from './models/User.js';
 
 // Load env variables
 dotenv.config();
@@ -31,6 +35,51 @@ mongoose
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/files', fileRoutes);
+app.use('/api/orgs', organizationRoutes);
+
+// Soft delete organizations deactivated for 90+ days
+const softDeleteOldOrganizations = async () => {
+  try {
+    const ninetyDaysAgo = new Date();
+    ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+
+    const oldOrgs = await Organization.find({
+      status: 'suspended',
+      deactivatedAt: { $lt: ninetyDaysAgo },
+    });
+
+    for (const org of oldOrgs) {
+      console.log(`Soft deleting organization: ${org.name} (${org._id})`);
+
+      // Remove all members
+      await OrganizationMember.deleteMany({ organization: org._id });
+
+      // Remove org from all users
+      await User.updateMany(
+        { organizations: org._id },
+        { $pull: { organizations: org._id } }
+      );
+
+      // Soft delete the organization (mark as deleted)
+      await Organization.findByIdAndUpdate(org._id, {
+        status: 'deleted',
+        deletedAt: new Date(),
+      });
+    }
+
+    if (oldOrgs.length > 0) {
+      console.log(`Soft deleted ${oldOrgs.length} organizations`);
+    }
+  } catch (error) {
+    console.error('Error in soft delete job:', error);
+  }
+};
+
+// Run soft delete job every 24 hours
+setInterval(softDeleteOldOrganizations, 24 * 60 * 60 * 1000);
+
+// Run once on startup
+setTimeout(softDeleteOldOrganizations, 5000);
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -48,8 +97,8 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: 'Internal server error' });
 });
 
-// ✅ FIXED PORT SETUP
-const PORT = process.env.PORT || 5003;
+// ✅ DEV SERVER PORT MATCHING VITE PROXY
+const PORT = process.env.PORT || 8000;
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

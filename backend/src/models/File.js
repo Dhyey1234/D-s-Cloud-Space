@@ -28,6 +28,11 @@ const fileSchema = new mongoose.Schema(
       ref: 'User',
       required: true,
     },
+    organizationId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Organization',
+      default: null,
+    },
     createdAt: {
       type: Date,
       default: Date.now,

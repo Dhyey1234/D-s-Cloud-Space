@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import './AuthPages.css';
 
-export default function LoginPage() {
+export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -12,45 +12,40 @@ export default function LoginPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setMessage('');
     setLoading(true);
 
     try {
-      const response = await fetch('/api/auth/login', {
+      const response = await fetch('/api/auth/forgot-password', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email }),
       });
 
       const data = await response.json();
-
       if (!response.ok) {
-        setError(data.message || 'Login failed');
+        setError(data.message || 'Unable to send reset email');
       } else {
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-        navigate('/home');
+        setMessage('Reset instructions have been sent to your email.');
       }
     } catch (err) {
-      setError('An error occurred. Please try again.');
       console.error(err);
+      setError('An unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleSignup = () => {
-    navigate('/signup');
   };
 
   return (
     <div className="auth-page">
       <div className="auth-container">
         <div className="auth-card">
-          <h1 className="auth-title">Sign In</h1>
-          <p className="auth-subtitle">Welcome back to D's Cloud Space</p>
+          <h1 className="auth-title">Forgot Password</h1>
+          <p className="auth-subtitle">Enter the email address linked to your account.</p>
 
+          {message && <div className="success-message">{message}</div>}
           {error && <div className="error-message">{error}</div>}
 
           <form onSubmit={handleSubmit} className="auth-form">
@@ -66,26 +61,18 @@ export default function LoginPage() {
               />
             </div>
 
-            <div className="form-group">
-              <label htmlFor="password">Password</label>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter your password"
-                required
-              />
-            </div>
-
             <button type="submit" className="btn btn-primary auth-button" disabled={loading}>
-              {loading ? 'Signing In...' : 'Sign In'}
+              {loading ? 'Sending...' : 'Send Reset Link'}
             </button>
           </form>
 
           <div className="auth-footer">
-            <p>Don't have an account? <button className="link-button" onClick={handleSignup}>Sign Up</button></p>
-            <p><button className="link-button" onClick={() => navigate('/forgot-password')}>Forgot password?</button></p>
+            <p>
+              Remembered your password? <Link to="/login">Sign In</Link>
+            </p>
+            <p>
+              Need a new account? <Link to="/signup">Sign Up</Link>
+            </p>
           </div>
         </div>
       </div>
